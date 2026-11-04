@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in · SkillSwap</title>
+<link rel="stylesheet" href="../shared/shared.css">
+<style>
+  .auth-shell__art h2 { color: #fff; font-size: 30px; max-width: 340px; }
+  .auth-shell__art p { color: rgba(255,255,255,.85); margin-top: 10px; max-width: 320px; }
+  .auth-card { width: 100%; max-width: 400px; }
+  .switch-line { text-align: center; margin-top: 20px; font-size: 14px; color: var(--ink-soft); }
+  .switch-line a { color: var(--violet); font-weight: 700; }
+  .demo-box {
+    margin-top: 22px; padding: 14px 16px; border-radius: var(--r-md);
+    background: var(--bg-soft); border: 1px dashed var(--border); font-size: 12.5px; color: var(--ink-soft);
+  }
+  .demo-box b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-shell__art">
+    <div class="auth-shell__blob" style="width:300px;height:300px;top:-60px;right:-90px;"></div>
+    <div class="auth-shell__blob" style="width:200px;height:200px;bottom:-50px;left:-30px;"></div>
+    <div>
+      <span class="pill pill-grey" style="background:rgba(255,255,255,.18);color:#fff;">Welcome back</span>
+      <h2 style="margin-top:14px;">Pick up right where your last swap left off.</h2>
+      <p>Your requests, sessions, and mentor score are all waiting for you.</p>
+    </div>
+  </div>
+
+  <div class="auth-shell__form">
+    <div class="auth-card">
+      <div class="auth-head" style="margin-bottom:26px;">
+        <span class="eyebrow">Sign in</span>
+        <h1 style="font-size:26px;">Log in to SkillSwap</h1>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="email">College email</label>
+          <input type="email" id="email" placeholder="you@college.edu" autocomplete="email">
+          <p class="error-message" id="err-email">⚠ Enter your email address.</p>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Your password" autocomplete="current-password">
+          <p class="error-message" id="err-password">⚠ Enter your password.</p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Log in</button>
+      </form>
+
+      <p class="switch-line">New to SkillSwap? <a href="../register/index.html">Create an account</a></p>
+
+      <div class="demo-box">
+        <b>Demo login</b> — priya.sharma@college.edu / demo1234
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/app.js"></script>
+<script>
+  const form = document.getElementById('loginForm');
+  const emailEl = document.getElementById('email');
+  const passEl = document.getElementById('password');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    let valid = true;
+    if (!emailEl.value.trim()) { emailEl.classList.add('invalid'); document.getElementById('err-email').classList.add('show'); valid = false; }
+    else { emailEl.classList.remove('invalid'); document.getElementById('err-email').classList.remove('show'); }
+    if (!passEl.value) { passEl.classList.add('invalid'); document.getElementById('err-password').classList.add('show'); valid = false; }
+    else { passEl.classList.remove('invalid'); document.getElementById('err-password').classList.remove('show'); }
+    if (!valid) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in…';
+
+    const res = await db.login({ email: emailEl.value.trim(), password: passEl.value });
+    if (!res.ok) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Log in';
+      toast(res.error, 'error');
+      return;
+    }
+    toast('Welcome back, ' + res.user.name.split(' ')[0] + '!', 'success');
+    setTimeout(() => window.location.href = '../dashboard/index.html', 500);
+  });
+</script>
+</body>
+</html>

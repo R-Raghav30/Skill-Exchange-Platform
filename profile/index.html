@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile · SkillSwap</title>
+<link rel="stylesheet" href="../shared/shared.css">
+<style>
+  .profile-hero { display:flex; gap:22px; align-items:center; margin-bottom: 26px; }
+  .profile-hero .avatar { width:84px; height:84px; font-size:28px; }
+  .stat-strip { display:flex; gap:26px; margin-top:10px; }
+  .stat-strip div b { display:block; font-family:var(--font-display); font-size:19px; }
+  .stat-strip div span { font-size:12px; color:var(--ink-soft); }
+  .tag-list { display:flex; flex-wrap:wrap; gap:8px; }
+</style>
+</head>
+<body class="page">
+
+<main style="padding: 28px 0 60px;">
+  <div class="container" style="max-width: 780px;">
+
+    <div class="profile-hero">
+      <div class="avatar" id="pAvatar"></div>
+      <div>
+        <h1 style="font-size:24px;" id="pName"></h1>
+        <p style="color:var(--ink-soft);font-size:14px;" id="pMeta"></p>
+        <div class="stat-strip">
+          <div><b id="pScore">—</b><span>Mentor Score</span></div>
+          <div><b id="pSessions">0</b><span>Sessions</span></div>
+          <div><b id="pBadgeCount">0</b><span>Badges</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3 class="section-title" style="font-size:17px;">Skills I teach</h3>
+        <div class="tag-list" id="offerTags" style="margin-top:12px;"></div>
+      </div>
+      <div class="card">
+        <h3 class="section-title" style="font-size:17px;">Skills I want to learn</h3>
+        <div class="tag-list" id="requestTags" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 class="section-title" style="font-size:17px;">Mentor badges</h3>
+      <div class="tag-list" id="badges" style="margin-top:12px;"></div>
+    </div>
+
+    <a href="../settings/index.html" class="btn btn-secondary" style="margin-top:20px;">Edit profile settings</a>
+    <a href="../admin/index.html" class="btn btn-ghost" style="margin-top:10px;font-size:13px;color:var(--ink-faint);">Admin dashboard</a>
+  </div>
+</main>
+
+<script src="../shared/app.js"></script>
+<script>
+  const user = requireAuthOrRedirect();
+  if (user) {
+    renderNavbar('/profile/index.html');
+    load();
+  }
+
+  function initials(name) { return name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase(); }
+
+  async function load() {
+    document.getElementById('pAvatar').textContent = initials(user.name);
+    document.getElementById('pName').textContent = user.name;
+    document.getElementById('pMeta').textContent = `${user.dept} · ${user.year} · ${user.usn}`;
+    document.getElementById('pScore').textContent = user.mentorScore ? '★ ' + user.mentorScore : 'New';
+    document.getElementById('pSessions').textContent = user.sessionsCount || 0;
+    document.getElementById('pBadgeCount').textContent = (user.badges || []).length;
+
+    const skills = await db.getMySkills(user.id);
+    const offers = skills.filter(s => s.type === 'offer');
+    const requests = skills.filter(s => s.type === 'request');
+
+    document.getElementById('offerTags').innerHTML = offers.length
+      ? offers.map(s => `<span class="pill pill-emerald">${s.name}</span>`).join('')
+      : `<span class="hint">No skills added yet.</span>`;
+    document.getElementById('requestTags').innerHTML = requests.length
+      ? requests.map(s => `<span class="pill pill-violet">${s.name}</span>`).join('')
+      : `<span class="hint">No skills added yet.</span>`;
+
+    document.getElementById('badges').innerHTML = (user.badges || []).length
+      ? user.badges.map(b => `<span class="badge"><span class="badge__icon">🏅</span>${b}</span>`).join('')
+      : `<span class="hint">Complete sessions to earn badges.</span>`;
+  }
+</script>
+</body>
+</html>

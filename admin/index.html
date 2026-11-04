@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · SkillSwap</title>
+<link rel="stylesheet" href="../shared/shared.css">
+<style>
+  .admin-stat { text-align:center; padding: 20px; }
+  .admin-stat b { display:block; font-family:var(--font-display); font-size:28px; }
+  .admin-stat span { font-size:12.5px; color:var(--ink-soft); }
+  table { width:100%; border-collapse: collapse; }
+  th, td { text-align:left; padding: 12px 10px; font-size:13.5px; border-bottom: 1px solid var(--border); }
+  th { color: var(--ink-soft); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+</style>
+</head>
+<body class="page">
+
+<main style="padding: 28px 0 60px;">
+  <div class="container">
+    <span class="eyebrow">Moderation</span>
+    <h1 class="section-title" style="font-size:26px;margin-top:6px;">Admin Dashboard</h1>
+    <p class="section-sub">Platform health, users, and dispute resolution.</p>
+
+    <div class="grid grid-3" id="adminStats" style="margin-bottom:24px;"></div>
+
+    <div class="card">
+      <h3 class="section-title" style="font-size:16px;margin-bottom:10px;">All users</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Name</th><th>Department</th><th>Mentor score</th><th>Sessions</th><th>Status</th></tr></thead>
+          <tbody id="userRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../shared/app.js"></script>
+<script>
+  const user = requireAuthOrRedirect();
+  if (user) { renderNavbar(''); load(); }
+
+  async function load() {
+    const users = await db.getLeaderboard();
+    const requests = await (async () => {
+      let all = [];
+      for (const u of users) { const r = await db.getRequestsFor(u.id); all.push(...r.outgoing); }
+      return all;
+    })();
+
+    document.getElementById('adminStats').innerHTML = [
+      { v: users.length, l: 'Total students' },
+      { v: requests.length, l: 'Total requests' },
+      { v: requests.filter(r => r.status === 'pending').length, l: 'Pending disputes/reviews' }
+    ].map(s => `<div class="card admin-stat"><b>${s.v}</b><span>${s.l}</span></div>`).join('');
+
+    document.getElementById('userRows').innerHTML = users.map(u => `
+      <tr>
+        <td style="font-weight:600;">${u.name}</td>
+        <td>${u.dept}</td>
+        <td>★ ${u.mentorScore || '—'}</td>
+        <td>${u.sessionsCount}</td>
+        <td><span class="pill pill-emerald">Active</span></td>
+      </tr>`).join('');
+  }
+</script>
+</body>
+</html>

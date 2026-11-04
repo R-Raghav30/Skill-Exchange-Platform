@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a Session · SkillSwap</title>
+<link rel="stylesheet" href="../shared/shared.css">
+<style>
+  .booking-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 960px) { .booking-layout { grid-template-columns: 1fr; } }
+
+  /* Selection carousel / cards */
+  .exchange-selector { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+  .exchange-card {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-radius: var(--r-md); border: 2px solid var(--border);
+    background: #fff; cursor: pointer; transition: all .18s ease;
+  }
+  .exchange-card:hover { border-color: #c7b3fb; background: #faf9ff; }
+  .exchange-card.active { border-color: var(--violet); background: #f6f1ff; box-shadow: var(--shadow-soft); }
+
+  /* Summary header banner */
+  .partner-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 16px 20px; background: linear-gradient(135deg, #f6f1ff 0%, #eef4ff 100%);
+    border: 1px solid #dfd6ff; border-radius: var(--r-md); margin-bottom: 22px;
+  }
+
+  /* Quick pick chips */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip-btn {
+    border: 1.5px solid var(--border); background: #fff; padding: 6px 14px;
+    border-radius: var(--r-pill); font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+    cursor: pointer; transition: all .15s ease;
+  }
+  .chip-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--bg-soft); }
+  .chip-btn.active { border-color: var(--violet); background: var(--violet); color: #fff; }
+
+  /* Platform grid */
+  .platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 6px; }
+  .platform-opt {
+    border: 1.5px solid var(--border); border-radius: var(--r-md); padding: 12px 10px;
+    text-align: center; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--ink-soft);
+    background: #fff; transition: all .15s ease; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .platform-opt:hover { border-color: #c7b3fb; background: var(--bg-soft); }
+  .platform-opt.active { border-color: var(--violet); background: #f6f1ff; color: var(--violet); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
+
+  /* Session items in sidebar */
+  .sidebar-session {
+    padding: 16px; border: 1.5px solid var(--border); border-radius: var(--r-md);
+    background: #fff; margin-bottom: 12px; transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .sidebar-session:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+  .sidebar-session__meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+</style>
+</head>
+<body class="page">
+
+<main style="padding: 28px 0 60px;">
+  <div class="container">
+    <div style="margin-bottom: 24px;">
+      <span class="eyebrow">Schedule & Connect</span>
+      <h1 class="section-title" style="font-size:28px;margin-top:6px;">Book a Learning Session</h1>
+      <p class="section-sub">Lock in a date, time, and platform for your accepted skill exchange.</p>
+    </div>
+
+    <!-- Empty State: When no accepted requests exist -->
+    <div class="card empty-state" id="noExchangesCard" style="display:none;max-width:640px;margin:30px auto;padding:48px 30px;">
+      <div class="empty-state__icon">🤝</div>
+      <h3 style="font-size:20px;margin-bottom:8px;">No Accepted Exchanges Found</h3>
+      <p style="font-size:14px;color:var(--ink-soft);max-width:440px;margin:0 auto 20px;">
+        SkillSwap sessions are booked after an exchange request is accepted by either student. Start by finding a skill or checking your requests.
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="../search-skills/index.html" class="btn btn-primary btn-sm">Find Skills to Request</a>
+        <a href="../exchange-requests/index.html" class="btn btn-secondary btn-sm">Check Requests Inbox</a>
+      </div>
+    </div>
+
+    <!-- Main Two-Column Layout -->
+    <div class="booking-layout" id="bookingMainLayout" style="display:none;">
+
+      <!-- Left Column: Form & Selection -->
+      <div>
+        <!-- Exchange Selector (when multiple accepted exchanges exist) -->
+        <div id="exchangeSelectorBox" style="display:none;margin-bottom:20px;">
+          <label style="font-weight:700;font-size:14px;margin-bottom:10px;display:block;">
+            Select Accepted Exchange to Schedule:
+          </label>
+          <div class="exchange-selector" id="exchangeCardsList"></div>
+        </div>
+
+        <!-- Selected Partner Banner -->
+        <div class="partner-banner" id="partnerBanner">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="avatar" id="bannerAvatar" style="width:48px;height:48px;font-size:16px;">--</div>
+            <div>
+              <div style="font-weight:800;font-size:16px;" id="bannerPartnerName">Loading...</div>
+              <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">
+                Skill: <b style="color:var(--violet);" id="bannerSkillName">--</b>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span class="pill pill-emerald" id="bannerDirection">1-on-1 Swap</span>
+            <div style="font-size:12px;color:var(--ink-faint);margin-top:4px;" id="bannerScore">★ Rating --</div>
+          </div>
+        </div>
+
+        <!-- Notification if session is already scheduled for this request -->
+        <div id="rescheduleAlert" style="display:none;background:#eef6ff;border:1.5px solid #bdd7ff;border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;font-size:13.5px;color:var(--royal-blue);">
+          <b>ℹ️ Session already scheduled for this swap:</b>
+          <div id="rescheduleDetails" style="margin-top:4px;color:var(--ink);font-weight:600;"></div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Choosing a new date/time below will reschedule this session.</div>
+        </div>
+
+        <!-- Booking Form -->
+        <form class="card" id="bookingForm" style="box-shadow:var(--shadow-soft);">
+          <h3 class="section-title" style="font-size:18px;margin-bottom:18px;">Meeting Details</h3>
+
+          <!-- Date field -->
+          <div class="field">
+            <label for="bookDate">1. Date</label>
+            <input type="date" id="bookDate" required>
+            <div class="chips-row" id="dateChips">
+              <button type="button" class="chip-btn" data-offset="0">Today</button>
+              <button type="button" class="chip-btn active" data-offset="1">Tomorrow</button>
+              <button type="button" class="chip-btn" data-offset="2">In 2 Days</button>
+              <button type="button" class="chip-btn" data-offset="weekend">This Weekend</button>
+            </div>
+            <p class="error-message" id="err-date">⚠ Please pick a valid meeting date.</p>
+          </div>
+
+          <!-- Time & Duration field -->
+          <div class="field-row">
+            <div class="field">
+              <label for="bookTime">2. Start Time</label>
+              <input type="time" id="bookTime" value="16:00" required>
+              <div class="chips-row" id="timeChips">
+                <button type="button" class="chip-btn" data-time="10:00">10:00 AM</button>
+                <button type="button" class="chip-btn" data-time="14:00">2:00 PM</button>
+                <button type="button" class="chip-btn active" data-time="16:00">4:00 PM</button>
+                <button type="button" class="chip-btn" data-time="18:00">6:00 PM</button>
+              </div>
+              <p class="error-message" id="err-time">⚠ Please pick a meeting time.</p>
+            </div>
+
+            <div class="field">
+              <label>3. Duration</label>
+              <div class="chips-row" id="durationChips" style="margin-top:0;">
+                <button type="button" class="chip-btn" data-dur="30 mins">30 mins</button>
+                <button type="button" class="chip-btn active" data-dur="45 mins">45 mins</button>
+                <button type="button" class="chip-btn" data-dur="60 mins">60 mins</button>
+              </div>
+              <div class="hint" style="margin-top:14px;">Recommended for peer swaps: 45 mins.</div>
+            </div>
+          </div>
+
+          <!-- Platform field -->
+          <div class="field" style="margin-top:10px;">
+            <label>4. Platform / Meeting Location</label>
+            <div class="platform-grid" id="platformGrid">
+              <div class="platform-opt active" data-p="Google Meet">
+                <span style="font-size:18px;">🎥</span> Google Meet
+              </div>
+              <div class="platform-opt" data-p="Zoom">
+                <span style="font-size:18px;">💻</span> Zoom
+              </div>
+              <div class="platform-opt" data-p="Microsoft Teams">
+                <span style="font-size:18px;">👥</span> MS Teams
+              </div>
+              <div class="platform-opt" data-p="Campus Library">
+                <span style="font-size:18px;">📚</span> Campus Library
+              </div>
+              <div class="platform-opt" data-p="Discord">
+                <span style="font-size:18px;">🎧</span> Discord
+              </div>
+            </div>
+          </div>
+
+          <!-- Meeting Link / Specific Location -->
+          <div class="field">
+            <label for="meetingLocation">5. Meeting Link or Exact Room Location</label>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="meetingLocation" placeholder="https://meet.google.com/new" value="https://meet.google.com/new">
+              <button type="button" class="btn btn-secondary btn-sm" id="genLinkBtn" style="white-space:nowrap;" title="Generate quick Google Meet link">
+                ⚡ Auto-link
+              </button>
+            </div>
+            <div class="hint" id="locHint">Online link or campus building/room for your session.</div>
+          </div>
+
+          <!-- Notes / Agenda -->
+          <div class="field">
+            <label for="sessionAgenda">6. Session Agenda or Questions (Optional)</label>
+            <textarea id="sessionAgenda" rows="2" placeholder="e.g. Let's cover async/await, review my project repository, and do live debugging."></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary btn-block" id="submitBookingBtn" style="padding:14px 24px;font-size:15px;margin-top:8px;">
+            📅 Confirm & Schedule Session
+          </button>
+        </form>
+      </div>
+
+      <!-- Right Column: Booked Sessions & Quick Tips -->
+      <div>
+        <div class="card" style="box-shadow:var(--shadow-soft);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 class="section-title" style="font-size:18px;margin-bottom:0;">Your Booked Sessions</h3>
+            <span class="tab-badge" id="bookedCountBadge">0</span>
+          </div>
+          <p class="section-sub" style="font-size:13px;margin-bottom:16px;">Scheduled peer learning sessions.</p>
+
+          <div id="bookedSessionsList">
+            <div class="empty-state" style="padding:24px 10px;">
+              <div class="empty-state__icon" style="font-size:28px;">🗓️</div>
+              <p style="font-size:13.5px;">No booked sessions yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SkillSwap Meeting Tips -->
+        <div class="card" style="margin-top:18px;background:var(--bg-soft);border:1px dashed #d1c8f5;">
+          <h4 style="font-size:15px;color:var(--violet);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+            💡 Quick Tips for Successful Swaps
+          </h4>
+          <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.6;">
+            <li>Prepare 2-3 specific questions or topics in advance.</li>
+            <li>Test your camera and microphone 5 minutes before start.</li>
+            <li>After the session ends, don't forget to submit a peer rating to boost your mentor's campus score!</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="../shared/app.js"></script>
+<script>
+  const user = requireAuthOrRedirect();
+  let acceptedRequests = [];
+  let userSessions = [];
+  let selectedRequest = null;
+  let selectedPlatform = 'Google Meet';
+  let selectedDuration = '45 mins';
+
+  if (user) {
+    renderNavbar('/book-session/index.html');
+    init();
+    setupEventHandlers();
+  }
+
+  async function init() {
+    try {
+      const [reqData, sessData] = await Promise.all([
+        db.getRequestsFor(user.id),
+        db.getSessionsFor(user.id)
+      ]);
+
+      userSessions = sessData || [];
+      const allReqs = [...(reqData.incoming || []), ...(reqData.outgoing || [])];
+      
+      // Filter unique accepted requests
+      const seen = new Set();
+      acceptedRequests = allReqs.filter(r => {
+        if (r.status === 'accepted' && !seen.has(r.id)) {
+          seen.add(r.id);
+          return true;
+        }
+        return false;
+      });
+
+      renderBookedSessions();
+
+      if (acceptedRequests.length === 0) {
+        document.getElementById('noExchangesCard').style.display = 'block';
+        document.getElementById('bookingMainLayout').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('noExchangesCard').style.display = 'none';
+      document.getElementById('bookingMainLayout').style.display = 'grid';
+
+      // Determine initial selected request
+      const urlParams = new URLSearchParams(window.location.search);
+      const reqIdParam = urlParams.get('requestId');
+      if (reqIdParam) {
+        selectedRequest = acceptedRequests.find(r => r.id === reqIdParam) || acceptedRequests[0];
+      } else {
+        selectedRequest = acceptedRequests[0];
+      }
+
+      // Render exchange selector if multiple exist
+      if (acceptedRequests.length > 1) {
+        renderExchangeSelector();
+        document.getElementById('exchangeSelectorBox').style.display = 'block';
+      } else {
+        document.getElementById('exchangeSelectorBox').style.display = 'none';
+      }
+
+      selectRequest(selectedRequest);
+
+      // Default date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('bookDate');
+      dateInput.min = todayStr;
+      dateInput.value = tomorrowStr;
+
+    } catch (err) {
+      console.error('Error initializing booking page:', err);
+      toast('Failed to load exchange details.', 'error');
+    }
+  }
+
+  function getPartner(r) {
+    if (!r) return null;
+    return r.toUserId === user.id ? r.fromUser : r.toUser;
+  }
+
+  function selectRequest(r) {
+    selectedRequest = r;
+    const partner = getPartner(r);
+    const initials = partner && partner.name ? partner.name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase() : '?';
+
+    document.getElementById('bannerAvatar').textContent = initials;
+    document.getElementById('bannerPartnerName').textContent = partner?.name || 'SkillSwap Member';
+    document.getElementById('bannerSkillName').textContent = r.skillName;
+    document.getElementById('bannerDirection').textContent = r.toUserId === user.id ? 'Teaching / Mentor' : 'Learning from Partner';
+    document.getElementById('bannerScore').textContent = '★ ' + (partner?.mentorScore ? partner.mentorScore.toFixed(1) : 'New Member');
+
+    // Update active highlight in selector
+    document.querySelectorAll('.exchange-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.id === r.id);
+    });
+
+    // Check if session already scheduled for this request
+    const existing = userSessions.find(s => s.requestId === r.id && s.status === 'scheduled');
+    const alertBox = document.getElementById('rescheduleAlert');
+    const submitBtn = document.getElementById('submitBookingBtn');
+
+    if (existing) {
+      const dt = new Date(existing.datetime).toLocaleString([], {
+        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      document.getElementById('rescheduleDetails').textContent = `${dt} on ${existing.platform}`;
+      alertBox.style.display = 'block';
+      submitBtn.textContent = '🔄 Reschedule / Update Session';
+
+      // Pre-fill existing values
+      try {
+        const parts = existing.datetime.split('T');
+        if (parts[0]) document.getElementById('bookDate').value = parts[0];
+        if (parts[1]) document.getElementById('bookTime').value = parts[1].slice(0, 5);
+        if (existing.platform) {
+          const platName = existing.platform.split(' · ')[0];
+          setPlatform(platName || existing.platform);
+          if (existing.platform.includes(' · ')) {
+            document.getElementById('meetingLocation').value = existing.platform.split(' · ')[1];
+          }
+        }
+      } catch (e) {}
+    } else {
+      alertBox.style.display = 'none';
+      submitBtn.textContent = '📅 Confirm & Schedule Session';
+    }
+  }
+
+  function renderExchangeSelector() {
+    const list = document.getElementById('exchangeCardsList');
+    list.innerHTML = acceptedRequests.map(r => {
+      const partner = getPartner(r);
+      const initials = partner && partner.name ? partner.name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase() : '?';
+      const existing = userSessions.find(s => s.requestId === r.id && s.status === 'scheduled');
+      const isSelected = selectedRequest && selectedRequest.id === r.id;
+
+      return `
+      <div class="exchange-card ${isSelected ? 'active' : ''}" data-id="${r.id}" onclick="selectRequestById('${r.id}')">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="avatar" style="width:36px;height:36px;font-size:13px;">${initials}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;">${partner?.name || 'Partner'}</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);">Skill: <b>${r.skillName}</b></div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          ${existing 
+            ? `<span class="pill pill-blue" style="font-size:11px;">📅 Scheduled</span>` 
+            : `<span class="pill pill-violet" style="font-size:11px;">Ready to Book</span>`}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function selectRequestById(id) {
+    const req = acceptedRequests.find(r => r.id === id);
+    if (req) selectRequest(req);
+  }
+
+  function setPlatform(p) {
+    selectedPlatform = p;
+    document.querySelectorAll('.platform-opt').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.p === p);
+    });
+
+    const locInput = document.getElementById('meetingLocation');
+    const locHint = document.getElementById('locHint');
+
+    if (p === 'Google Meet') {
+      locInput.placeholder = 'https://meet.google.com/new';
+      if (!locInput.value || locInput.value.includes('zoom') || locInput.value.includes('Library')) {
+        locInput.value = 'https://meet.google.com/new';
+      }
+      locHint.textContent = 'Paste Google Meet link or click Auto-link.';
+    } else if (p === 'Zoom') {
+      locInput.placeholder = 'https://zoom.us/j/123456789';
+      if (locInput.value.includes('meet.google')) locInput.value = '';
+      locHint.textContent = 'Paste Zoom meeting URL.';
+    } else if (p === 'Campus Library') {
+      locInput.placeholder = 'e.g. Central Library, 2nd Floor Group Discussion Area';
+      if (locInput.value.startsWith('http')) locInput.value = 'Central Library, 2nd Floor Study Room';
+      locHint.textContent = 'Enter specific on-campus spot or library room number.';
+    } else if (p === 'Discord') {
+      locInput.placeholder = 'e.g. Server Voice Room #skill-swap-1';
+      if (locInput.value.startsWith('http')) locInput.value = '';
+      locHint.textContent = 'Discord server voice channel or user tag.';
+    } else {
+      locInput.placeholder = 'e.g. https://teams.microsoft.com/...';
+      locHint.textContent = 'Meeting link or physical location.';
+    }
+  }
+
+  function renderBookedSessions() {
+    const list = document.getElementById('bookedSessionsList');
+    const badge = document.getElementById('bookedCountBadge');
+    const active = userSessions.filter(s => s.status === 'scheduled');
+    badge.textContent = active.length;
+
+    if (!active.length) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding:24px 10px;">
+          <div class="empty-state__icon" style="font-size:28px;">🗓️</div>
+          <p style="font-size:13.5px;color:var(--ink-soft);">No upcoming sessions scheduled yet.</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = active.map(s => {
+      const partner = s.fromUserId === user.id ? s.toUser : s.fromUser;
+      const partnerName = partner?.name || 'Swap Partner';
+      const initials = partnerName.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+      const dt = new Date(s.datetime);
+      const dateFormatted = dt.toLocaleString([], {
+        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      // Google Calendar link builder
+      const startIso = dt.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      const endDt = new Date(dt.getTime() + 45*60000);
+      const endIso = endDt.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('SkillSwap: ' + s.skillName + ' with ' + partnerName)}&dates=${startIso}/${endIso}&details=${encodeURIComponent('SkillSwap learning session on ' + s.skillName + '. Platform: ' + s.platform)}&location=${encodeURIComponent(s.platform)}`;
+
+      const isOnline = s.platform.includes('http') || s.platform.includes('Meet') || s.platform.includes('Zoom');
+      const linkMatch = s.platform.match(/(https?:\/\/[^\s]+)/);
+      const directLink = linkMatch ? linkMatch[0] : (s.platform.includes('Google Meet') ? 'https://meet.google.com' : null);
+
+      return `
+      <div class="sidebar-session">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="avatar" style="width:34px;height:34px;font-size:12px;">${initials}</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">${s.skillName}</div>
+              <div style="font-size:12px;color:var(--ink-soft);">with ${partnerName}</div>
+            </div>
+          </div>
+          <span class="pill pill-blue" style="font-size:11px;">Scheduled</span>
+        </div>
+        <div class="sidebar-session__meta">
+          <div>⏰ <b>${dateFormatted}</b></div>
+          <div>📍 ${s.platform}</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+          ${directLink ? `
+            <a href="${directLink}" target="_blank" class="btn btn-primary btn-sm" style="font-size:12px;padding:6px 12px;">
+              🚀 Join Meeting
+            </a>` : ''}
+          <a href="${calUrl}" target="_blank" class="btn btn-secondary btn-sm" style="font-size:12px;padding:6px 10px;" title="Add to Google Calendar">
+            📅 Google Cal
+          </a>
+          <button class="btn btn-ghost btn-sm" style="font-size:12px;padding:6px 10px;color:var(--error);" onclick="cancelBooking('${s.id}')">
+            ✕ Cancel
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function setupEventHandlers() {
+    // Platform options
+    document.querySelectorAll('.platform-opt').forEach(opt => {
+      opt.addEventListener('click', () => setPlatform(opt.dataset.p));
+    });
+
+    // Date quick chips
+    document.querySelectorAll('#dateChips .chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#dateChips .chip-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const offset = btn.dataset.offset;
+        const targetDate = new Date();
+        if (offset === 'weekend') {
+          // Find next Saturday
+          const day = targetDate.getDay();
+          const diff = (6 - day + 7) % 7 || 7;
+          targetDate.setDate(targetDate.getDate() + diff);
+        } else {
+          targetDate.setDate(targetDate.getDate() + parseInt(offset));
+        }
+        document.getElementById('bookDate').value = targetDate.toISOString().split('T')[0];
+      });
+    });
+
+    // Time quick chips
+    document.querySelectorAll('#timeChips .chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#timeChips .chip-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('bookTime').value = btn.dataset.time;
+      });
+    });
+
+    // Duration chips
+    document.querySelectorAll('#durationChips .chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#durationChips .chip-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedDuration = btn.dataset.dur;
+      });
+    });
+
+    // Auto-link generator button
+    document.getElementById('genLinkBtn').addEventListener('click', () => {
+      const code = Math.random().toString(36).substring(2, 5) + '-' + 
+                   Math.random().toString(36).substring(2, 6) + '-' + 
+                   Math.random().toString(36).substring(2, 5);
+      const url = `https://meet.google.com/${code}`;
+      document.getElementById('meetingLocation').value = url;
+      setPlatform('Google Meet');
+      toast('Generated Google Meet link!', 'success');
+    });
+
+    // Form submit
+    document.getElementById('bookingForm').addEventListener('submit', handleFormSubmit);
+  }
+
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    if (!selectedRequest) {
+      toast('Please select an exchange request first.', 'error');
+      return;
+    }
+
+    const dateEl = document.getElementById('bookDate');
+    const timeEl = document.getElementById('bookTime');
+    const locEl = document.getElementById('meetingLocation');
+    const agendaEl = document.getElementById('sessionAgenda');
+
+    let valid = true;
+    if (!dateEl.value) {
+      dateEl.classList.add('invalid');
+      document.getElementById('err-date').classList.add('show');
+      valid = false;
+    } else {
+      dateEl.classList.remove('invalid');
+      document.getElementById('err-date').classList.remove('show');
+    }
+
+    if (!timeEl.value) {
+      timeEl.classList.add('invalid');
+      document.getElementById('err-time').classList.add('show');
+      valid = false;
+    } else {
+      timeEl.classList.remove('invalid');
+      document.getElementById('err-time').classList.remove('show');
+    }
+
+    if (!valid) return;
+
+    const submitBtn = document.getElementById('submitBookingBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Scheduling session…';
+
+    const partner = getPartner(selectedRequest);
+    const partnerId = partner?.id || (selectedRequest.toUserId === user.id ? selectedRequest.fromUserId : selectedRequest.toUserId);
+
+    let finalPlatform = selectedPlatform;
+    const locationVal = locEl.value.trim();
+    if (locationVal) {
+      finalPlatform = `${selectedPlatform} (${locationVal})`;
+    }
+    if (agendaEl.value.trim()) {
+      finalPlatform += ` [Agenda: ${agendaEl.value.trim()}]`;
+    }
+
+    try {
+      const res = await db.bookSession({
+        requestId: selectedRequest.id,
+        fromUserId: user.id,
+        toUserId: partnerId,
+        skillName: selectedRequest.skillName,
+        datetime: dateEl.value + 'T' + timeEl.value,
+        platform: finalPlatform
+      });
+
+      if (res && res.ok) {
+        toast(`Session successfully ${res.updated ? 'rescheduled' : 'booked'}!`, 'success');
+        // Refresh sessions list
+        userSessions = await db.getSessionsFor(user.id);
+        renderBookedSessions();
+        selectRequest(selectedRequest);
+      } else {
+        const errMsg = res?.error || 'Could not complete booking. Please try again.';
+        console.error('Booking failed:', errMsg);
+        toast(`Booking error: ${errMsg}`, 'error');
+      }
+    } catch (err) {
+      console.error('Unexpected booking error:', err);
+      toast('Failed to save session. Please try again.', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '📅 Confirm & Schedule Session';
+    }
+  }
+
+  async function cancelBooking(sessionId) {
+    if (!confirm('Are you sure you want to cancel this scheduled session?')) return;
+    try {
+      const res = await db.cancelSession(sessionId);
+      if (res && res.ok) {
+        toast('Session cancelled.', 'default');
+        userSessions = await db.getSessionsFor(user.id);
+        renderBookedSessions();
+        if (selectedRequest) selectRequest(selectedRequest);
+      } else {
+        toast('Failed to cancel session.', 'error');
+      }
+    } catch (err) {
+      console.error('Cancel session error:', err);
+      toast('Error cancelling session.', 'error');
+    }
+  }
+</script>
+</body>
+</html>

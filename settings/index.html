@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings · SkillSwap</title>
+<link rel="stylesheet" href="../shared/shared.css">
+<style>
+  .settings-row { display:flex; justify-content:space-between; align-items:center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .settings-row:last-child { border-bottom: none; }
+  .switch { width:44px; height:26px; border-radius:999px; background:var(--border); position:relative; cursor:pointer; transition:background .15s; flex-shrink:0; }
+  .switch.on { background: var(--gradient-primary); }
+  .switch::after { content:''; position:absolute; width:20px;height:20px; border-radius:50%; background:#fff; top:3px; left:3px; transition:left .15s; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+  .switch.on::after { left:21px; }
+</style>
+</head>
+<body class="page">
+
+<main style="padding: 28px 0 60px;">
+  <div class="container" style="max-width: 640px;">
+    <span class="eyebrow">Account</span>
+    <h1 class="section-title" style="font-size:26px;margin-top:6px;">Settings</h1>
+    <p class="section-sub">Update your account details and preferences.</p>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 class="section-title" style="font-size:16px;margin-bottom:16px;">Profile details</h3>
+      <form id="profileForm">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="year">Year of study</label>
+            <select id="year">
+              <option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="dept">Department</label>
+            <select id="dept">
+              <option>Computer Science</option><option>Information Science</option>
+              <option>Electronics</option><option>Mechanical</option><option>Civil</option><option>Data Science</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </form>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 class="section-title" style="font-size:16px;margin-bottom:6px;">Notifications</h3>
+      <div class="settings-row">
+        <div><div style="font-weight:600;font-size:14.5px;">New exchange requests</div><div class="hint">Get notified when someone requests a skill from you.</div></div>
+        <div class="switch on" data-key="notif_requests"></div>
+      </div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;font-size:14.5px;">Session reminders</div><div class="hint">Reminders 1 hour before a booked session.</div></div>
+        <div class="switch on" data-key="notif_reminders"></div>
+      </div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;font-size:14.5px;">Leaderboard updates</div><div class="hint">Weekly digest of leaderboard changes.</div></div>
+        <div class="switch" data-key="notif_leaderboard"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title" style="font-size:16px;margin-bottom:10px;">Session</h3>
+      <button class="btn btn-secondary" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+</main>
+
+<script src="../shared/app.js"></script>
+<script>
+  const user = requireAuthOrRedirect();
+  if (user) {
+    renderNavbar('');
+    document.getElementById('name').value = user.name;
+    document.getElementById('year').value = user.year;
+    document.getElementById('dept').value = user.dept;
+  }
+
+  document.querySelectorAll('.switch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      sw.classList.toggle('on');
+      toast(sw.classList.contains('on') ? 'Preference enabled.' : 'Preference disabled.');
+    });
+  });
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await db.updateUser(user.id, {
+      name: document.getElementById('name').value.trim(),
+      year: document.getElementById('year').value,
+      dept: document.getElementById('dept').value
+    });
+    toast('Profile updated!', 'success');
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    db.logout();
+    window.location.href = '../login/index.html';
+  });
+</script>
+</body>
+</html>

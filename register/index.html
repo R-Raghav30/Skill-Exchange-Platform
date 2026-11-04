@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account · SkillSwap</title>
+<link rel="stylesheet" href="../shared/shared.css">
+<style>
+  .auth-shell__art h2 { color: #fff; font-size: 30px; max-width: 340px; }
+  .auth-shell__art p { color: rgba(255,255,255,.85); margin-top: 10px; max-width: 320px; }
+  .auth-card { width: 100%; max-width: 440px; }
+  .auth-head { margin-bottom: 26px; }
+  .auth-head .eyebrow { margin-bottom: 8px; display:block; }
+  .switch-line { text-align: center; margin-top: 20px; font-size: 14px; color: var(--ink-soft); }
+  .switch-line a { color: var(--violet); font-weight: 700; }
+  .progress-row { display:flex; gap:6px; margin-bottom: 22px; }
+  .progress-row span { height: 4px; flex:1; border-radius: 999px; background: var(--border); }
+  .progress-row span.done { background: var(--gradient-primary); }
+</style>
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-shell__art">
+    <div class="auth-shell__blob" style="width:340px;height:340px;top:-80px;left:-80px;"></div>
+    <div class="auth-shell__blob" style="width:220px;height:220px;bottom:-60px;right:-40px;"></div>
+    <div>
+      <span class="pill pill-grey" style="background:rgba(255,255,255,.18);color:#fff;">Join 1,200+ students</span>
+      <h2 style="margin-top:14px;">Trade what you know for what you want to learn.</h2>
+      <p>No fees, no hierarchy — just students teaching students, one swap at a time.</p>
+    </div>
+  </div>
+
+  <div class="auth-shell__form">
+    <div class="auth-card">
+      <div class="auth-head">
+        <span class="eyebrow">Get started</span>
+        <h1 style="font-size:26px;">Create your account</h1>
+        <p style="color:var(--ink-soft);margin-top:6px;font-size:14.5px;">Use your college email to verify your student status.</p>
+      </div>
+
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" placeholder="e.g. Priya Sharma" autocomplete="name">
+          <p class="error-message" id="err-name">⚠ Please enter your full name.</p>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="usn">USN</label>
+            <input type="text" id="usn" name="usn" placeholder="1AB21CS045">
+            <p class="error-message" id="err-usn">⚠ USN is required.</p>
+          </div>
+          <div class="field">
+            <label for="year">Year of study</label>
+            <select id="year" name="year">
+              <option value="">Select year</option>
+              <option>1st Year</option>
+              <option>2nd Year</option>
+              <option>3rd Year</option>
+              <option>4th Year</option>
+            </select>
+            <p class="error-message" id="err-year">⚠ Please select your year.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="dept">Department</label>
+          <select id="dept" name="dept">
+            <option value="">Select department</option>
+            <option>Computer Science</option>
+            <option>Information Science</option>
+            <option>Electronics</option>
+            <option>Mechanical</option>
+            <option>Civil</option>
+            <option>Data Science</option>
+          </select>
+          <p class="error-message" id="err-dept">⚠ Please select your department.</p>
+        </div>
+
+        <div class="field">
+          <label for="email">College email</label>
+          <input type="email" id="email" name="email" placeholder="you@college.edu" autocomplete="email">
+          <p class="error-message" id="err-email">⚠ Enter a valid .edu college email address.</p>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="At least 8 characters" autocomplete="new-password">
+          <p class="hint">Use 8+ characters. Mix in a number for a stronger password.</p>
+          <p class="error-message" id="err-password">⚠ Password must be at least 8 characters.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Create account</button>
+      </form>
+
+      <p class="switch-line">Already have an account? <a href="../login/index.html">Log in</a></p>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/app.js"></script>
+<script>
+  const form = document.getElementById('registerForm');
+  const submitBtn = document.getElementById('submitBtn');
+
+  const fields = {
+    name:     { el: document.getElementById('name'),     test: v => v.trim().length >= 2 },
+    usn:      { el: document.getElementById('usn'),       test: v => v.trim().length >= 4 },
+    year:     { el: document.getElementById('year'),      test: v => v !== '' },
+    dept:     { el: document.getElementById('dept'),      test: v => v !== '' },
+    email:    { el: document.getElementById('email'),     test: v => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu$/.test(v.trim()) },
+    password: { el: document.getElementById('password'),  test: v => v.length >= 8 }
+  };
+
+  function validateField(key) {
+    const { el, test } = fields[key];
+    const errEl = document.getElementById('err-' + key);
+    const valid = test(el.value);
+    el.classList.toggle('invalid', !valid);
+    errEl.classList.toggle('show', !valid);
+    return valid;
+  }
+
+  Object.keys(fields).forEach(key => {
+    const el = fields[key].el;
+    el.addEventListener('blur', () => validateField(key));
+    el.addEventListener('input', () => { if (el.classList.contains('invalid')) validateField(key); });
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const results = Object.keys(fields).map(validateField);
+    if (results.includes(false)) {
+      toast('Please fix the highlighted fields.', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account…';
+
+    const payload = {
+      name: fields.name.el.value.trim(),
+      usn: fields.usn.el.value.trim().toUpperCase(),
+      year: fields.year.el.value,
+      dept: fields.dept.el.value,
+      email: fields.email.el.value.trim(),
+      password: fields.password.el.value
+    };
+
+    const res = await db.register(payload);
+    if (!res.ok) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create account';
+      toast(res.error, 'error');
+      return;
+    }
+
+    await db.login({ email: payload.email, password: payload.password });
+    toast('Account created! Redirecting…', 'success');
+    setTimeout(() => window.location.href = '../dashboard/index.html', 700);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillSwap</title>
+<link rel="stylesheet" href="shared/shared.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .loader { text-align:center; }
+  .brand__mark { width:56px;height:56px;border-radius:16px;margin:0 auto 14px; font-size:26px; }
+</style>
+</head>
+<body>
+  <div class="loader">
+    <div class="brand__mark" style="display:flex;align-items:center;justify-content:center;background:var(--gradient-primary);color:#fff;">S</div>
+    <p style="color:var(--ink-soft);">Loading SkillSwap…</p>
+  </div>
+  <script src="shared/app.js"></script>
+  <script>
+    const user = db.currentUser();
+    window.location.href = user ? 'dashboard/index.html' : 'login/index.html';
+  </script>
+</body>
+</html>
